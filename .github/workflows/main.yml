@@ -1,4 +1,4 @@
-name: Build nezha binary
+name: Build cloudflared binary
 
 on:
   workflow_run:
