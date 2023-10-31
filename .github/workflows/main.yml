@@ -1,0 +1,70 @@
+name: Build nezha binary
+
+on:
+  workflow_run:
+    workflows: ["Run Tests"]
+    branches: [main]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: 'cloudflare/cloudflared'
+
+      - name: xgo build static
+        uses: crazy-max/ghaction-xgo@v2
+        with:
+          xgo_version: latest
+          go_version: 1.21
+          dest: musldist
+          pkg: cmd/cloudflared
+          prefix: cloudflared
+          targets: linux/amd64,linux/arm64,linux/arm,linux/386,linux/mips,linux/mipsle
+          v: true
+          x: false
+          race: false
+          ldflags: -s -w --extldflags '-static -fpic'
+          buildmode: default
+
+      - name: Compress with UPX
+        run: |
+          wget https://github.com/upx/upx/releases/download/v4.2.0/upx-4.2.0-amd64_linux.tar.xz 
+          tar -Jxf upx*.tar.xz
+          sudo cp upx*/upx /usr/bin
+          upx -9 musldist/*
+
+      - name: Upload dist
+        uses: actions/upload-artifact@main
+        with:
+          name: nezha-agent
+          path: |
+              musldist
+
+      - name: Generate release tag
+        id: tag
+        run: echo "::set-output name=release_tag::$(date +"%Y.%m.%d-%H%M")"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          files: |
+              musldist/*
+
+      - name: Remove old Releases
+        uses: dev-drprasad/delete-older-releases@v0.1.0
+        if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+        with:
+          keep_latest: 3
+          delete_tags: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACCESS_KEY }}
