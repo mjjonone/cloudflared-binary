@@ -20,7 +20,7 @@ jobs:
           fetch-depth: '1'
 
       - name: xgo build static
-        uses: crazy-max/ghaction-xgo@v2
+        uses: crazy-max/ghaction-xgo@v3
         with:
           xgo_version: latest
           go_version: 1.21
