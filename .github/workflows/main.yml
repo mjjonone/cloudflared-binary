@@ -44,7 +44,7 @@ jobs:
       - name: Upload dist
         uses: actions/upload-artifact@main
         with:
-          name: nezha-agent
+          name: cloudflared
           path: |
               musldist
 
