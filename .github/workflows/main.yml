@@ -31,7 +31,7 @@ jobs:
           v: true
           x: false
           race: false
-          ldflags: -s -w -X main.version={{.Version}} -X main.arch={{.Arch}} --extldflags '-static -fpic'
+          ldflags: -s -w --extldflags '-static -fpic'
           buildmode: default
 
       - name: Compress with UPX
