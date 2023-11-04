@@ -19,20 +19,37 @@ jobs:
           repository: 'cloudflare/cloudflared'
           fetch-depth: '1'
 
-      - name: xgo build static
-        uses: crazy-max/ghaction-xgo@v3
+      - uses: actions/setup-go@v4
         with:
-          xgo_version: latest
-          go_version: 1.20.6
-          dest: musldist
-          pkg: cmd/cloudflared
-          prefix: cloudflared
-          targets: linux/amd64,linux/arm64,linux/arm,linux/386,linux/mips,linux/mipsle
-          v: true
-          x: false
-          race: false
-          ldflags: -s -w --extldflags '-static -fpic'
-          buildmode: default
+          go-version: 'stable'
+
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      - name: Echo env
+        run: |
+          echo $RELEASE_VERSION
+          echo ${{ env.RELEASE_VERSION }}
+
+      - name: Build
+        timeout-minutes: 180
+        run: |
+          pwd
+          go version
+          VERSION="${{ env.RELEASE_VERSION }}"
+          VERSION="${VERSION%.*}"  
+          echo "VERSION=${VERSION}"
+          set -x
+          DATE=$(date -u '+%Y-%m-%d-%H%M UTC')
+          VERSION_FLAGS="-X \"main.Version=${VERSION}\" -X \"main.BuildTime=${DATE}\""
+          NAME="cloudflared"
+          SRC="github.com/cloudflare/cloudflared/cmd/cloudflared"
+          rm -rf ./release
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build                     -mod=vendor -ldflags="${VERSION_FLAGS} -w -s" -o release/${NAME}-linux-amd64 ${SRC}
+          CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build                     -mod=vendor -ldflags="${VERSION_FLAGS} -w -s" -o release/${NAME}-linux-arm64 ${SRC}
+          mkdir -p musldist
+          mv release/* musldist/
+
 
       - name: Compress with UPX
         run: |
