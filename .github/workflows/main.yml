@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: 'cloudflare/cloudflared'
+          repository: 'cloudflare/cloudflared/tree/349586007ca2622b56183f8ec3e6f45f3c1f6bb9'
           fetch-depth: '1'
 
       - uses: actions/setup-go@v4
